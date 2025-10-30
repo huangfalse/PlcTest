@@ -1,0 +1,94 @@
+package com.mes.userinfo.entity;
+
+import com.alibaba.fastjson.annotation.JSONField;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.stream.Collectors;
+
+/**
+ * @Author : zhoush
+ * @Date: 2024/4/11 15:46
+ * @Description:
+ */
+public class LoginUser implements UserDetails {
+
+
+    private SysUser user;
+
+    /**
+     * 存储权限信息
+     */
+    @JSONField(serialize = false)
+    private List<String> permissions;
+
+    /**
+     * 存储SpringSecurity调用getAuthorities()方法获取的权限信息的集合
+     */
+    @JSONField(serialize = false)
+    private List<GrantedAuthority> authorities;
+
+
+    public LoginUser() {
+    }
+
+    public LoginUser(SysUser user, List<String> permissions) {
+        this.user = user;
+        this.permissions = permissions;
+    }
+
+    public SysUser getUser() {
+        return user;
+    }
+
+    public void setUser(SysUser user) {
+        this.user = user;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+
+        // 优化为只需要第一次获取的时候进行遍历，后面再用就会从authorities这个成员变量中获取了，不会再进行Stream循环遍历了
+        if (authorities != null) {
+            return authorities;
+        }
+        //把permissions中字符串类型的权限信息转换成GrantedAuthority对象存入authorities中
+        authorities = permissions.stream().
+                map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+        return authorities;
+    }
+
+    @Override
+    public String getPassword() {
+        return user.getPassword();
+    }
+
+    @Override
+    public String getUsername() {
+        return user.getUserName();
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
+    }
+}

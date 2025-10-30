@@ -1,0 +1,92 @@
+{
+  "logics": [
+    {
+      "name":"请求逻辑",
+      "sequence":"1",
+      "apiConfigBefore": {
+        "codeId": "edgSelect",
+        "type": "Procedure",
+        "address": "testProcedure",
+        "parameters": {
+          "method": "POST"
+        }
+      },
+      "logic":[
+        {
+          "codeId": "plcRequest",
+          "value": [1]
+        },
+        {
+          "codeId": "mesSend",
+          "value": [0]
+        }
+      ],
+      "returnValue": [
+        {
+          "codeId": "mesSend",
+          "address": "S7.DB8.DBW2",
+          "fixed": true,
+          "value": 1,
+          "plcDataType": "int",
+          "length": 2
+        },
+        {
+          "codeId": "width",
+          "address": "S7.DB8.DBW4",
+          "fixed": false,
+          "value": 1,
+          "plcDataType": "int",
+          "length": 2
+        }
+      ,
+        {
+          "codeId": "height",
+          "address": "S7.DB8.DBW6",
+          "fixed": false,
+          "value": 2,
+          "plcDataType": "int",
+          "length": 2
+        }
+      ]
+    },
+    {
+      "name":"请求清空",
+      "sequence":"2",
+      "apiConfigBefore": {
+        "codeId": "edgSelect",
+        "type": "View",
+        "address": "viewname",
+        "parameters": {
+          "method": "POST"
+        }
+      },
+      "logic":[
+        {
+          "codeId": "plcRequest",
+          "value": [0]
+        },
+        {
+          "codeId": "mesSend",
+          "value": [1]
+        }
+      ],
+      "returnValue": [
+        {
+          "codeId": "mesSend",
+          "fixed": true,
+          "value": 0
+        },
+        {
+          "codeId": "width",
+          "fixed": true,
+          "value": 0
+        },
+        {
+          "codeId": "height",
+          "fixed": true,
+          "value": 0
+        }
+      ]
+    }
+  ]
+}

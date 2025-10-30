@@ -1,0 +1,12 @@
+2025-10-29 14:16:05.321 [main] WARN  c.baomidou.mybatisplus.core.toolkit.ReflectionKit - Warn: LmEngineeringServiceImpl's superclass not ParameterizedType
+2025-10-29 14:16:05.322 [main] WARN  c.baomidou.mybatisplus.core.toolkit.ReflectionKit - Warn: LmEngineeringServiceImpl's superclass not ParameterizedType
+2025-10-29 14:16:07.381 [main] WARN  com.netflix.config.sources.URLConfigurationSource - No URLs will be polled as dynamic configuration sources.
+2025-10-29 14:16:07.387 [main] WARN  com.netflix.config.sources.URLConfigurationSource - No URLs will be polled as dynamic configuration sources.
+2025-10-29 14:27:05.043 [main] WARN  c.baomidou.mybatisplus.core.toolkit.ReflectionKit - Warn: LmEngineeringServiceImpl's superclass not ParameterizedType
+2025-10-29 14:27:05.044 [main] WARN  c.baomidou.mybatisplus.core.toolkit.ReflectionKit - Warn: LmEngineeringServiceImpl's superclass not ParameterizedType
+2025-10-29 14:27:07.037 [main] WARN  com.netflix.config.sources.URLConfigurationSource - No URLs will be polled as dynamic configuration sources.
+2025-10-29 14:27:07.043 [main] WARN  com.netflix.config.sources.URLConfigurationSource - No URLs will be polled as dynamic configuration sources.
+2025-10-29 14:42:41.198 [main] WARN  c.baomidou.mybatisplus.core.toolkit.ReflectionKit - Warn: LmEngineeringServiceImpl's superclass not ParameterizedType
+2025-10-29 14:42:41.198 [main] WARN  c.baomidou.mybatisplus.core.toolkit.ReflectionKit - Warn: LmEngineeringServiceImpl's superclass not ParameterizedType
+2025-10-29 14:42:43.161 [main] WARN  com.netflix.config.sources.URLConfigurationSource - No URLs will be polled as dynamic configuration sources.
+2025-10-29 14:42:43.167 [main] WARN  com.netflix.config.sources.URLConfigurationSource - No URLs will be polled as dynamic configuration sources.

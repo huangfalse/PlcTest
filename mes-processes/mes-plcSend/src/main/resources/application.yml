@@ -1,0 +1,54 @@
+server:
+  port: 10018
+spring:
+  profiles:
+    active: dev
+  application:
+    name: plcSend
+  liquibase:
+    enabled: true
+    change-log: classpath:changelog/changelogBase.xml
+  main:
+    allow-bean-definition-overriding: true
+feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000
+        readTimeout: 5000
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+#  configuration:
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+erp:
+  url: http://10.153.19.150:8086
+
+# PLC配置
+s7:
+  load:
+    dbArea: DB1
+    beginIndex: 0
+  raw:
+    dbArea: DB2
+    beginIndex: 0
+
+# PLC模拟配置
+plc:
+  simulate:
+    enabled: false  # 是否启用PLC模拟
+    interval: 5000  # 模拟间隔时间（毫秒）
+    failure-rate: 0  # 模拟故障概率（0-100）
+    task-count: 10   # 模拟任务数量
+    task-type: normal # 模拟任务类型
+    data-range:
+      min-start: 1
+      max-start: 100
+      min-target: 1
+      max-target: 100
+      min-glass-count: 1
+      max-glass-count: 50
+
+mes:
+  width: 2800
+  height: 5000

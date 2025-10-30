@@ -1,0 +1,41 @@
+import axios from 'axios'
+import config from '../../config';
+import useUserInfoStore from '@/stores/userInfo'
+const userStore=useUserInfoStore()
+const unloadrequest = axios.create({
+    baseURL: `http://${config.serverUrl2}`,  // 注意！！ 这里是全局统一加上了 后端接口前缀 前缀，后端必须进行跨域配置！
+    timeout: 5000
+})
+// request 拦截器
+// 可以自请求发送前对请求做一些处理
+// 比如统一加token，对请求参数统一加密
+unloadrequest.interceptors.request.use(config => {
+    config.headers['Content-Type'] = 'application/json;charset=utf-8';
+    if(userStore.user){
+        config.headers['token'] = userStore.user.token;
+    }
+      // 设置请求头
+    return config
+}, error => {
+    return Promise.reject(error)
+});
+// response 拦截器
+// 可以在接口响应后统一处理结果
+unloadrequest.interceptors.response.use(
+    response => {
+        let res = response.data;
+        // 如果是返回的文件
+        if (response.config.responseType === 'blob') {
+            return res
+        }
+        // 兼容服务端返回的字符串数据
+        if (typeof res === 'string') {
+            res = res ? JSON.parse(res) : res
+        }
+        return res;
+    },
+    error => {
+        return Promise.reject(error)
+    }
+)
+export default unloadrequest

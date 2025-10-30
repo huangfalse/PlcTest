@@ -1,0 +1,45 @@
+{
+  "name": "northglass-mes",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.3.1",
+    "@vue-macros/reactivity-transform": "^0.3.23",
+    "axios": "^1.6.8",
+    "chart.js": "^4.4.3",
+    "dayjs": "^1.11.13",
+    "echarts": "^5.6.0",
+    "element-plus": "^2.4.0",
+    "file-saver": "^2.0.5",
+    "moment": "^2.30.1",
+    "northglass-mes": "file:",
+    "pinia": "^2.1.6",
+    "pinia-plugin-persistedstate": "^3.2.0",
+    "qrcode": "^1.5.4",
+    "sortablejs": "^1.15.1",
+    "sweetalert2": "^11.10.7",
+    "vue": "^3.3.4",
+    "vue-draggable-plus": "^0.5.0",
+    "vue-echarts": "^6.7.3",
+    "vue-i18n": "^11.0.0-rc.1",
+    "vue-print-nb": "^1.7.5",
+    "vue-router": "^4.0.13",
+    "vue3-print-nb": "^0.1.4",
+    "vxe-table": "^4.5.15",
+    "xe-utils": "^3.5.14",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/sortablejs": "^1.15.7",
+    "@vitejs/plugin-vue": "^4.6.2",
+    "babel-polyfill": "^6.26.0",
+    "http-proxy-middleware": "^3.0.0",
+    "unplugin-auto-import": "^0.17.6",
+    "vite": "^4.4.9"
+  }
+}

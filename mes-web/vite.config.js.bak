@@ -1,0 +1,104 @@
+import ReactivityTransform from '@vue-macros/reactivity-transform/vite'
+import AutoImport from 'unplugin-auto-import/vite'
+import {defineConfig} from 'vite'
+import vue from '@vitejs/plugin-vue'
+import {fileURLToPath, URL} from 'node:url'
+import { createHash } from 'node:crypto'
+
+// 性能优化：简化 manualChunks 分组策略
+const chunkGroups = {
+    'vue-related': ['vue', '@vue/', 'vue-router', 'pinia'],
+    'ui-library': ['element-plus', 'ant-design-vue', 'vant'],
+    'utility': ['lodash', 'axios', 'dayjs']
+}
+
+
+export default defineConfig({
+    plugins: [vue(), ReactivityTransform(),
+        AutoImport({
+            imports: [
+                'vue-i18n',
+            ],
+            dts: './auto-imports.d.ts',
+            eslintrc: {
+                enabled: false, // 配置更新时临时设为true,
+            },
+        })],
+    resolve: {
+        alias: {
+            'vue-i18n': 'vue-i18n/dist/vue-i18n.cjs.js',
+            '@': fileURLToPath(new URL('./src', import.meta.url))
+        }
+    },
+    // 启用持久缓存
+    cacheDir: './node_modules/.vite',
+    build: {
+        // 输出目录
+        outDir: 'dist',
+        // 禁用 brotli 压缩报告
+        brotliSize: false,
+        // 调整 chunk 大小警告限制
+        chunkSizeWarningLimit: 1500,
+        // 使用 esbuild 压缩以获得更快速度
+        minify: 'esbuild',
+        // 静态资源小于 8KB 内联
+        assetsInlineLimit: 8192,
+        // 自定义 Rollup 配置
+        rollupOptions: {
+            // 排除测试和 mock 文件
+            external: [/^tests\//, /^mock\//],
+            output: {
+                // 简化哈希长度
+                entryFileNames: 'assets/js/[name]-[hash:8].js',
+                chunkFileNames: 'assets/js/[name]-[hash:8].js',
+                // 优化资源输出路径
+                assetFileNames: (assetInfo) => {
+                    const extType = assetInfo.name.split('.').pop()
+                    if (/png|jpe?g|gif|svg|webp|avif/i.test(extType)) {
+                        return 'assets/images/[name]-[hash:8][extname]'
+                    }
+                    if (/woff2?|eot|ttf|otf/i.test(extType)) {
+                        return 'assets/fonts/[name]-[hash:8][extname]'
+                    }
+                    return 'assets/[ext]/[name]-[hash:8][extname]'
+                },
+                // 优化的 manualChunks 策略
+                manualChunks: (id) => {
+                    if (id.includes('node_modules')) {
+                        const libName = id.split('node_modules/')[1].split('/')[0]
+                        for (const [group, deps] of Object.entries(chunkGroups)) {
+                            if (deps.some(dep => libName.includes(dep))) {
+                                return `vendor-${group}`
+                            }
+                        }
+                        return 'vendor'
+                    }
+                },
+                // 更快的哈希算法
+                hashCharacters: 'hex',
+                hashFunction: (input) => {
+                    return createHash('sha1').update(input).digest('hex').substring(0, 8)
+                }
+            }
+        }
+    },
+    // 开发服务器配置
+    server: {
+        port: 801,
+        host: true,
+        open: false,
+        https: false,
+        proxy: {
+            '/api': {
+                target: 'http://127.0.0.1:88/',
+                changeOrigin: true,
+                rewrite: (path) => path.replace(/^\/api/, '/'),
+            },
+        },
+    },
+    // 预构建优化
+    optimizeDeps: {
+        include: ['vue', 'vue-router', 'pinia'],
+        exclude: ['vue-demi']
+    }
+})

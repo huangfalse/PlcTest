@@ -1,0 +1,84 @@
+server:
+  port: 88
+spring:
+  application:
+    name: gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: 127.0.0.1:8848
+    gateway:
+      discovery:
+        locator:
+          enabled: true
+      routes:
+        - id: plcSend
+          uri: lb://plcSend
+          predicates:
+            - Path=/api/plcSend/**
+          filters:
+            - StripPrefix=2
+
+        - id: glassStorage
+          uri: lb://glassStorage
+          predicates:
+            - Path=/api/glassStorage/**
+            -
+          filters:
+            - StripPrefix=2
+
+        - id: loadGlass
+          uri: lb://loadGlass
+          predicates:
+            - Path=/api/loadGlass/**
+          filters:
+            - StripPrefix=2
+
+        - id: cutting
+          uri: lb://cutting
+          predicates:
+            - Path=/api/cutting/**
+          filters:
+            - StripPrefix=2
+
+        - id: horizontal
+          uri: lb://horizontal
+          predicates:
+            - Path=/api/horizontal/**
+          filters:
+            - StripPrefix=2
+
+        - id: edging
+          uri: lb://edging
+          predicates:
+            - Path=/api/edging/**
+          filters:
+            - StripPrefix=2
+
+        - id: verticalGlass
+          uri: lb://verticalGlass
+          predicates:
+            - Path=/api/verticalGlass/**
+          filters:
+            - StripPrefix=2
+
+        - id: temperingGlass
+          uri: lb://temperingGlass
+          predicates:
+            - Path=/api/temperingGlass/**
+          filters:
+            - StripPrefix=2
+
+        - id: unLoadGlass
+          uri: lb://unLoadGlass
+          predicates:
+            - Path=/api/unLoadGlass/**
+          filters:
+            - StripPrefix=2
+
+        - id: hollowGlass
+          uri: lb://hollowGlass
+          predicates:
+            - Path=/api/hollowGlass/**
+          filters:
+            - StripPrefix=2

@@ -1,0 +1,141 @@
+{
+  "logics": [
+    {
+      "name":"请求逻辑",
+      "sequence":"1",
+      "apiConfigBefore": {
+        "codeId": "loadSelect",
+        "type": "Http",
+        "address": "http://localhost:8082/account/testApi",
+        "parameters": {
+          "method": "POST"
+        }
+      },
+      "logic":[
+        {
+          "codeId": "plcRequest",
+          "value": [1]
+        },
+        {
+          "codeId": "mesSend",
+          "value": [0]
+        }
+      ],
+      "returnValue": [
+        {
+          "codeId": "mesSend",
+          "fixed": true,
+          "value": 1
+        },
+        {
+          "codeId": "width",
+          "fixed": false,
+          "value": 1
+        }
+      ,
+        {
+          "codeId": "height",
+          "fixed": false,
+          "value": 2
+        }
+      ]
+    },
+    {
+      "name":"请求清空",
+      "sequence":"2",
+      "apiConfigBefore": {
+        "codeId": "",
+        "type": "View",
+        "address": "viewname",
+        "parameters": {
+          "method": "POST"
+        }
+      },
+      "logic":[
+        {
+          "codeId": "plcRequest",
+          "value": [0]
+        },
+        {
+          "codeId": "mesSend",
+          "value": [1]
+        }
+      ],
+      "returnValue": [
+        {
+          "codeId": "mesSend",
+          "fixed": true,
+          "value": 0
+        },
+        {
+          "codeId": "width",
+          "fixed": true,
+          "value": 0
+        },
+        {
+          "codeId": "height",
+          "fixed": true,
+          "value": 0
+        }
+      ]
+    },
+    {
+      "name":"完成逻辑",
+      "sequence":"3",
+      "apiConfigBefore": {
+        "codeId": "edgSelect",
+        "type": "View",
+        "address": "viewname",
+        "parameters": {
+          "method": "POST"
+        }
+      },
+      "logic":[
+        {
+          "codeId": "plcComplete",
+          "value": [1]
+        },
+        {
+          "codeId": "mesComplete",
+          "value": [0]
+        }
+      ],
+      "returnValue": [
+        {
+          "codeId": "mesComplete",
+          "fixed": true,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "name":"完成清空",
+      "sequence":"4",
+      "apiConfigBefore": {
+        "codeId": "edgSelect",
+        "type": "View",
+        "address": "viewname",
+        "parameters": {
+          "method": "POST"
+        }
+      },
+      "logic":[
+        {
+          "codeId": "plcComplete",
+          "value": [0]
+        },
+        {
+          "codeId": "mesComplete",
+          "value": [1,2,3]
+        }
+      ],
+      "returnValue": [
+        {
+          "codeId": "mesComplete",
+          "fixed": true,
+          "value": 0
+        }
+      ]
+    }
+  ]
+}

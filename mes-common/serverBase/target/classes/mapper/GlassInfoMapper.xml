@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.mes.base.glassinfo.mapper.GlassInfoMapper">
+    <select id="queryNotReport" resultType="com.mes.glassinfo.GlassInfo">
+        SELECT g.*
+
+        FROM glass_info g
+                 LEFT JOIN damage d ON g.glass_id = d.glass_id
+                 LEFT JOIN report_info r ON g.glass_id = r.glass_id
+        WHERE g.engineer_id = #{engineerId}
+          AND d.glass_id is null
+          AND r.glass_id is null
+    </select>
+
+    <select id="queryGlassListByErp" resultType="com.mes.glassinfo.GlassInfo">
+        SELECT t1.project_no       AS engineer_id,
+               t1.process_id       AS flow_card_id,
+               t1.glass_id,
+               t.glass_type        AS films_id,
+               t1.order_sort       AS glass_type,
+               t1.o_width          AS width,
+               t1.o_height         AS height,
+               t1.p_width          AS edg_width,
+               t1.p_height         AS edg_height,
+               t.glass_thickness   AS glass_thickness,
+               t1.layer            AS layer,
+               t3.layers_number    AS total_layer,
+               t1.stock_id         AS raw_sequence,
+               t1.x_axis,
+               t1.y_axis,
+               t1.heat_layout_id   AS tempering_layout_id,
+               t1.heat_layout_sort AS tempering_feed_sequence,
+               t2.x_axis           AS x_coordinate,
+               t2.y_axis           AS y_coordinate,
+               t2.rotate_angle     AS angle,
+               t3.MERGE            AS combine,
+               t1.mark_icon
+        FROM pp.optimize_project t
+                 LEFT JOIN pp.optimize_detail t1 ON t.project_no = t1.project_no
+                 LEFT JOIN pp.optimize_heat_detail t2 ON t.project_no = t2.project_no
+            AND t1.heat_layout_id = t2.layout_id
+            AND t1.heat_layout_sort = t2.sort
+                 LEFT JOIN pp.flow_card t3 ON t3.process_id = t1.process_id
+            AND t3.technology_number = t1.layer
+            AND t3.order_number = t1.order_sort
+        WHERE t.project_no = #{engineerId}
+    </select>
+    <select id="queryUnreportedList" resultType="com.mes.glassinfo.GlassInfo">
+        SELECT t.*
+        FROM glass_info t
+                 left join report_info t1 on t.glass_id = t1.glass_id
+                 left join damage t2 on t.glass_id = t2.glass_id
+        where t1.glass_id is null
+          and t2.glass_id is null
+          and t.engineer_id = #{engineerId}
+    </select>
+    <select id="queryGlassListByLayer" resultType="com.mes.tempering.compute.request.ProcessCardsRequest">
+        SELECT flow_card_id,
+        layer as layers,
+        total_layer,
+        COUNT(glass_id) as total_num,
+        round(sum(width * height / 1000000), 2) as total_area
+        FROM glass_info
+        WHERE flow_card_id = #{flowCardId}
+        AND layer = #{layer}
+        <if test="orderNumberList != null and orderNumberList.size() > 0">
+            and product_sort_number in (
+            <foreach collection="orderNumberList" item="item" separator=",">
+                #{item}
+            </foreach>
+            )
+        </if>
+        GROUP BY flow_card_id, layer, total_layer
+    </select>
+
+
+</mapper>

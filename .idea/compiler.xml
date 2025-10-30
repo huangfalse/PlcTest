@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <annotationProcessing>
+      <profile name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <module name="springSecurity" />
+        <module name="mes-plcSend" />
+        <module name="serverBase" />
+        <module name="model" />
+        <module name="communication" />
+        <module name="gateway" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="mes-cutting" target="1.8" />
+      <module name="mes-edging" target="1.8" />
+      <module name="mes-hollow" target="1.8" />
+      <module name="mes-horizontal" target="1.8" />
+      <module name="mes-loadGlass" target="1.8" />
+      <module name="mes-plcTest" target="1.8" />
+      <module name="mes-rawGlassStorage" target="1.8" />
+      <module name="mes-tempering" target="1.8" />
+      <module name="mes-vertical" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+  <component name="JavacSettings">
+    <option name="ADDITIONAL_OPTIONS_OVERRIDE">
+      <module name="communication" options="-parameters" />
+      <module name="gateway" options="-parameters" />
+      <module name="mes-cutting" options="-parameters" />
+      <module name="mes-edging" options="-parameters" />
+      <module name="mes-hollow" options="-parameters" />
+      <module name="mes-horizontal" options="-parameters" />
+      <module name="mes-loadGlass" options="-parameters" />
+      <module name="mes-plcSend" options="-parameters" />
+      <module name="mes-plcTest" options="-parameters" />
+      <module name="mes-rawGlassStorage" options="-parameters" />
+      <module name="mes-tempering" options="-parameters" />
+      <module name="mes-vertical" options="-parameters" />
+      <module name="model" options="-parameters" />
+      <module name="serverBase" options="-parameters" />
+      <module name="springSecurity" options="-parameters" />
+    </option>
+  </component>
+</project>
