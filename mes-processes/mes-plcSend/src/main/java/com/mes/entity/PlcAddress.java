@@ -1,6 +1,7 @@
 package com.mes.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
@@ -59,6 +60,7 @@ public class PlcAddressMapping implements Serializable {
      * 地址映射配置(JSON格式存储)
      * key为字段名，value为地址偏移量
      */
+    @TableField("address_mapping_json")
     private String addressMapping;
     
     /**
@@ -69,5 +71,6 @@ public class PlcAddressMapping implements Serializable {
     /**
      * 备注
      */
+    @TableField("description")
     private String remarks;
 }

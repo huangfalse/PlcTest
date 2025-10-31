@@ -3,6 +3,8 @@ package com.mes.service;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.xingshuangs.iot.protocol.s7.enums.EPlcType;
 import com.github.xingshuangs.iot.protocol.s7.service.S7PLC;
 import com.mes.config.PlcAddressMappingConfig;
@@ -10,13 +12,11 @@ import com.mes.entity.PlcAddressMapping;
 import com.mes.mapper.PlcAddressMappingMapper;
 import com.mes.s7.enhanced.EnhancedS7Serializer;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.catalina.core.ApplicationContext;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
-import javax.annotation.PostConstruct;
-import java.io.InputStream;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,14 +33,78 @@ public class PlcAddressMappingService {
 
     @Autowired
     private PlcAddressMappingMapper plcAddressMappingMapper;
-    
-    // 配置文件中的映射配置
-    private PlcAddressMappingConfig fileConfig;
 
-    @PostConstruct
-    public void init() {
-        // 初始化时加载配置文件中的映射
-        reloadConfigMappings();
+    @Autowired
+    private PlcAddressMappingConfig plcAddressMappingConfig;
+    
+    // JSON解析器
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    /**
+     * 获取包含地址映射的项目配置
+     * 合并数据库和配置文件中的映射信息
+     */
+    public PlcAddressMappingConfig.ProjectPlcConfig getProjectConfigWithMapping(String projectId) {
+        try {
+            // 1. 获取数据库中的配置
+            PlcAddressMapping mapping = getMappingByProjectId(projectId);
+            PlcAddressMappingConfig.ProjectPlcConfig projectConfig = null;
+            
+            if (mapping != null) {
+                // 从数据库实体转换为项目配置对象
+                projectConfig = convertToProjectConfig(mapping);
+            } else {
+                // 数据库中没有配置，尝试从配置文件获取
+                if (fileConfig != null && fileConfig.getProjects().containsKey(projectId)) {
+                    projectConfig = fileConfig.getProjects().get(projectId);
+                } else {
+                    // 创建默认配置
+                    projectConfig = new PlcAddressMappingConfig.ProjectPlcConfig();
+                    projectConfig.setDbArea(fileConfig != null ? fileConfig.getDefaultDbArea() : "DB1");
+                    projectConfig.setBeginIndex(fileConfig != null ? fileConfig.getDefaultBeginIndex() : 0);
+                    projectConfig.setAddressMapping(new HashMap<>());
+                }
+            }
+            
+            // 2. 如果配置文件中有额外的映射信息，进行合并
+            if (fileConfig != null && fileConfig.getProjects() != null && fileConfig.getProjects().containsKey(projectId)) {
+                PlcAddressMappingConfig.ProjectPlcConfig fileProjectConfig = fileConfig.getProjects().get(projectId);
+                
+                // 合并地址映射
+                if (fileProjectConfig.getAddressMapping() != null) {
+                    if (projectConfig.getAddressMapping() == null) {
+                        projectConfig.setAddressMapping(new HashMap<>());
+                    }
+                    // 文件配置作为基础，数据库配置作为覆盖（优先级更高）
+                    Map<String, Integer> mergedMapping = new HashMap<>(fileProjectConfig.getAddressMapping());
+                    if (projectConfig.getAddressMapping() != null) {
+                        mergedMapping.putAll(projectConfig.getAddressMapping());
+                    }
+                    projectConfig.setAddressMapping(mergedMapping);
+                }
+                
+                // 如果项目配置中缺少某些属性，从文件配置中补充
+                if (projectConfig.getDbArea() == null || projectConfig.getDbArea().trim().isEmpty()) {
+                    projectConfig.setDbArea(fileProjectConfig.getDbArea());
+                }
+                if (projectConfig.getPlcIp() == null || projectConfig.getPlcIp().trim().isEmpty()) {
+                    projectConfig.setPlcIp(fileProjectConfig.getPlcIp());
+                }
+                if (projectConfig.getPlcType() == null || projectConfig.getPlcType().trim().isEmpty()) {
+                    projectConfig.setPlcType(fileProjectConfig.getPlcType());
+                }
+            }
+            
+            return projectConfig;
+        } catch (Exception e) {
+            log.error("获取项目配置失败，项目ID: {}", projectId, e);
+            // 返回默认配置
+            PlcAddressMappingConfig.ProjectPlcConfig defaultConfig = new PlcAddressMappingConfig.ProjectPlcConfig();
+            defaultConfig.setDbArea(fileConfig != null ? fileConfig.getDefaultDbArea() : "DB1");
+            defaultConfig.setBeginIndex(fileConfig != null ? fileConfig.getDefaultBeginIndex() : 0);
+            defaultConfig.setAddressMapping(new HashMap<>());
+            return defaultConfig;
+        }
     }
 
     /**
@@ -59,7 +123,7 @@ public class PlcAddressMappingService {
             }
             
             // 如果数据库中没有，则从配置文件获取
-            if (fileConfig != null && fileConfig.getProjects() != null) {
+            if (fileConfig != null && fileConfig.getProjects() != null && fileConfig.getProjects().containsKey(projectId)) {
                 return fileConfig.getProjects().get(projectId);
             }
             
@@ -72,11 +136,35 @@ public class PlcAddressMappingService {
     }
 
     /**
-     * 从数据库获取所有映射配置
+     * 获取所有映射配置
+     * 合并数据库和配置文件中的映射信息
      */
     public List<PlcAddressMapping> getAllMappings() {
         try {
-            return plcAddressMappingMapper.selectList(null);
+            List<PlcAddressMapping> mappings = plcAddressMappingMapper.selectList(null);
+            
+            // 处理每个映射配置
+            for (PlcAddressMapping mapping : mappings) {
+                // 获取项目标识
+                String projectId = mapping.getProjectId();
+                
+                // 获取合并后的项目配置（包含数据库和配置文件的映射信息）
+                PlcAddressMappingConfig.ProjectPlcConfig projectConfig = getProjectConfigWithMapping(projectId);
+                
+                // 将合并后的映射信息转换为JSON字符串
+                if (projectConfig.getAddressMapping() != null && !projectConfig.getAddressMapping().isEmpty()) {
+                    try {
+                        String mergedMappingJson = objectMapper.writeValueAsString(projectConfig.getAddressMapping());
+                        mapping.setAddressMapping(mergedMappingJson);
+                        // addressMapping属性已经映射到数据库的address_mapping_json字段
+                    } catch (Exception e) {
+                        log.warn("转换合并后的映射信息失败，项目ID: {}", projectId, e);
+                        // 保持原有的addressMapping值
+                    }
+                }
+            }
+            
+            return mappings;
         } catch (Exception e) {
             log.error("获取所有PLC地址映射配置失败", e);
             throw new RuntimeException("获取所有PLC地址映射配置失败", e);
@@ -239,7 +327,7 @@ public class PlcAddressMappingService {
             
             // 尝试读取一个简单的数据来测试连接
             String dbArea = mapping.getDbArea() != null ? mapping.getDbArea() : "DB1";
-            int beginIndex = mapping.getBeginIndex() != null ? mapping.getBeginIndex() : 0;
+            int beginIndex = mapping.getBeginIndex();
             
             // 这里我们只测试连接，不读取实际数据
             // 实际项目中可能需要根据具体需求调整
@@ -255,84 +343,36 @@ public class PlcAddressMappingService {
      */
     public void reloadConfigMappings() {
         try {
-            // 加载配置文件
-            Yaml yaml = new Yaml(new Constructor(PlcAddressMappingConfig.class));
-            InputStream inputStream = this.getClass()
-                    .getClassLoader()
-                    .getResourceAsStream("application-dev.yml");
-            
-            if (inputStream != null) {
-                // 读取整个YAML文件
-                Map<String, Object> yamlData = yaml.load(inputStream);
-                
-                // 获取plc配置部分
-                if (yamlData.containsKey("plc")) {
-                    Map<String, Object> plcConfig = (Map<String, Object>) yamlData.get("plc");
-                    
-                    // 获取address.mapping部分
-                    if (plcConfig.containsKey("address") && 
-                        ((Map<String, Object>) plcConfig.get("address")).containsKey("mapping")) {
-                        
-                        Map<String, Object> addressMapping = (Map<String, Object>) ((Map<String, Object>) plcConfig.get("address")).get("mapping");
-                        
-                        // 创建配置对象
-                        fileConfig = new PlcAddressMappingConfig();
-                        
-                        // 设置默认值
-                        if (addressMapping.containsKey("defaultDbArea")) {
-                            fileConfig.setDefaultDbArea((String) addressMapping.get("defaultDbArea"));
-                        }
-                        if (addressMapping.containsKey("defaultBeginIndex")) {
-                            fileConfig.setDefaultBeginIndex((Integer) addressMapping.get("defaultBeginIndex"));
-                        }
-                        
-                        // 解析项目配置
-                        if (addressMapping.containsKey("projects")) {
-                            Map<String, Object> projects = (Map<String, Object>) addressMapping.get("projects");
-                            
-                            for (Map.Entry<String, Object> entry : projects.entrySet()) {
-                                String projectId = entry.getKey();
-                                Map<String, Object> projectData = (Map<String, Object>) entry.getValue();
-                                
-                                PlcAddressMappingConfig.ProjectPlcConfig projectConfig = new PlcAddressMappingConfig.ProjectPlcConfig();
-                                
-                                if (projectData.containsKey("dbArea")) {
-                                    projectConfig.setDbArea((String) projectData.get("dbArea"));
-                                } else {
-                                    projectConfig.setDbArea(fileConfig.getDefaultDbArea());
-                                }
-                                
-                                if (projectData.containsKey("beginIndex")) {
-                                    projectConfig.setBeginIndex((Integer) projectData.get("beginIndex"));
-                                } else {
-                                    projectConfig.setBeginIndex(fileConfig.getDefaultBeginIndex());
-                                }
-                                
-                                if (projectData.containsKey("plcIp")) {
-                                    projectConfig.setPlcIp((String) projectData.get("plcIp"));
-                                }
-                                
-                                if (projectData.containsKey("plcType")) {
-                                    projectConfig.setPlcType((String) projectData.get("plcType"));
-                                }
-                                
-                                if (projectData.containsKey("addressMapping")) {
-                                    projectConfig.setAddressMapping((Map<String, String>) projectData.get("addressMapping"));
-                                }
-                                
-                                fileConfig.getProjects().put(projectId, projectConfig);
-                            }
-                        }
+            // 关键修改3：通过Spring上下文刷新配置（适用于Spring Boot 2.x）
+            ApplicationContext applicationContext = SpringContextHolder.getApplicationContext();
+            if (applicationContext != null) {
+                // 获取配置绑定的BeanDefinition
+                ConfigurableApplicationContext configurableContext = (ConfigurableApplicationContext) applicationContext;
+                ConfigurableEnvironment environment = configurableContext.getEnvironment();
+
+                // 刷新配置源（重新读取配置文件）
+                for (PropertySource<?> source : environment.getPropertySources()) {
+                    if (source instanceof ResourcePropertySource) {
+                        ResourcePropertySource resourceSource = (ResourcePropertySource) source;
+                        // 重新加载配置文件资源
+                        resourceSource.refresh();
                     }
                 }
-                
-                log.info("成功加载配置文件中的PLC地址映射");
-            } else {
-                log.warn("未找到配置文件 application-dev.yml");
+
+                // 重新绑定配置到PlcAddressMappingConfig
+                Binder.get(environment)
+                        .bind("plc.address.mapping", PlcAddressMappingConfig.class)
+                        .ifBound(config -> {
+                            // 更新注入的配置实例（因@ConfigurationProperties默认是单例，需手动更新属性）
+                            this.plcAddressMappingConfig.setDefaultDbArea(config.getDefaultDbArea());
+                            this.plcAddressMappingConfig.setDefaultBeginIndex(config.getDefaultBeginIndex());
+                            this.plcAddressMappingConfig.setProjects(config.getProjects());
+                        });
+
+                log.info("成功重新加载配置文件中的PLC地址映射");
             }
         } catch (Exception e) {
-            log.error("加载配置文件中的PLC地址映射失败", e);
-            fileConfig = new PlcAddressMappingConfig();
+            log.error("重新加载配置文件中的PLC地址映射失败", e);
         }
     }
 
@@ -348,15 +388,22 @@ public class PlcAddressMappingService {
         config.setPlcType(mapping.getPlcType());
         
         // 解析地址映射JSON
-        if (mapping.getAddressMappingJson() != null && !mapping.getAddressMappingJson().trim().isEmpty()) {
+        if (mapping.getAddressMapping() != null && !mapping.getAddressMapping().trim().isEmpty()) {
             try {
-                // 这里可以使用JSON解析库，如Jackson或Gson
-                // 为了简单起见，这里只是将JSON字符串直接赋值
-                // 实际项目中应该解析为Map对象
-                // config.setAddressMapping(parseJsonToMap(mapping.getAddressMappingJson()));
+                // 使用Jackson解析JSON字符串为Map<String, Integer>
+                Map<String, Integer> addressMap = objectMapper.readValue(
+                    mapping.getAddressMapping(), 
+                    new TypeReference<Map<String, Integer>>() {}
+                );
+                config.setAddressMapping(addressMap);
             } catch (Exception e) {
-                log.warn("解析地址映射JSON失败: {}", mapping.getAddressMappingJson(), e);
+                log.warn("解析地址映射JSON失败: {}", mapping.getAddressMapping(), e);
+                // 如果解析失败，创建一个空的映射
+                config.setAddressMapping(new HashMap<>());
             }
+        } else {
+            // 如果没有地址映射，创建一个空的映射
+            config.setAddressMapping(new HashMap<>());
         }
         
         return config;

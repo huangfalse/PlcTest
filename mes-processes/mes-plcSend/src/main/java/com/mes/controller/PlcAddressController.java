@@ -12,7 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * PLC地址映射配置控制器
@@ -23,7 +25,7 @@ import java.util.List;
  */
 @Slf4j
 @RestController
-@RequestMapping("/api/plc/address-mapping")
+@RequestMapping("address-mapping")
 @Api(tags = "PLC地址映射配置管理")
 public class PlcAddressMappingController {
 
@@ -105,22 +107,39 @@ public class PlcAddressMappingController {
     }
 
     /**
-     * 根据项目标识获取项目配置（包含地址映射）
+     * 根据项目ID获取项目配置（包含地址映射）
+     * 对应前端配置获取需求
      */
-    @GetMapping("/project/{projectId}/config")
-    @ApiOperation("根据项目标识获取项目配置（包含地址映射）")
-    public Result<PlcAddressMappingConfig.ProjectPlcConfig> getProjectConfig(
-            @ApiParam("项目标识") @PathVariable String projectId) {
+    @GetMapping("/project/config")
+    @ApiOperation("根据项目ID获取项目配置（包含地址映射）")
+    public Result<Map<String, Object>> getProjectConfig(String projectId) {
         try {
-            PlcAddressMappingConfig.ProjectPlcConfig config = plcAddressMappingService.getProjectConfig(projectId);
-            if (config != null) {
-                return Result.success(config);
-            } else {
-                return Result.error("未找到项目标识为 " + projectId + " 的PLC配置");
+            // 获取基础配置
+            PlcAddressMapping mapping = plcAddressMappingService.getMappingByProjectId(projectId);
+            
+            // 获取完整项目配置（包含地址映射）
+            PlcAddressMappingConfig.ProjectPlcConfig projectConfig = plcAddressMappingService.getProjectConfigWithMapping(projectId);
+            
+            // 合并基础配置信息
+            Map<String, Object> result = new HashMap<>();
+            result.put("projectId", projectId);
+            result.put("dbArea", projectConfig.getDbArea());
+            result.put("beginIndex", projectConfig.getBeginIndex());
+            result.put("plcIp", projectConfig.getPlcIp());
+            result.put("plcType", projectConfig.getPlcType());
+            result.put("addressMapping", projectConfig.getAddressMapping());
+            
+            // 如果数据库中有配置，添加数据库中的额外信息
+            if (mapping != null) {
+                result.put("id", mapping.getId());
+                result.put("projectName", mapping.getProjectName());
+                result.put("remarks", mapping.getRemarks());
             }
+            
+            return Result.success(result);
         } catch (Exception e) {
-            log.error("获取项目PLC配置失败，项目标识: " + projectId, e);
-            return Result.error("获取项目PLC配置失败: " + e.getMessage());
+            log.error("获取项目配置失败，项目标识: " + projectId, e);
+            return Result.error("获取项目配置失败: " + e.getMessage());
         }
     }
 
@@ -139,8 +158,9 @@ public class PlcAddressMappingController {
             if (mapping.getDbArea() == null || mapping.getDbArea().trim().isEmpty()) {
                 return Result.error("DB块地址不能为空");
             }
-            if (mapping.getBeginIndex() == null) {
-                mapping.setBeginIndex(0); // 默认起始索引为0
+           
+            if (mapping.getBeginIndex() < 0) {
+                mapping.setBeginIndex(0); // 如果为负数，设置为默认起始索引0
             }
 
             PlcAddressMapping created = plcAddressMappingService.saveMapping(mapping);
@@ -180,6 +200,44 @@ public class PlcAddressMappingController {
         } catch (Exception e) {
             log.error("更新PLC地址映射配置失败，ID: " + id, e);
             return Result.error("更新PLC地址映射配置失败: " + e.getMessage());
+        }
+    }
+
+    /**
+     * 根据项目ID更新配置
+     * 对应前端：updateConfig
+     */
+    @PutMapping("/project/{projectId}")
+    @ApiOperation("根据项目ID更新配置")
+    public Result<PlcAddressMapping> updateMappingByProjectId(
+            @ApiParam("项目标识") @PathVariable String projectId,
+            @ApiParam("更新的PLC地址映射配置") @RequestBody PlcAddressMapping mapping) {
+        try {
+            // 参数验证
+            if (mapping.getDbArea() == null || mapping.getDbArea().trim().isEmpty()) {
+                return Result.error("DB块地址不能为空");
+            }
+
+            // 设置项目ID
+            mapping.setProjectId(projectId);
+            
+            // 查找现有配置
+            PlcAddressMapping existing = plcAddressMappingService.getMappingByProjectId(projectId);
+            if (existing != null) {
+                // 更新现有配置
+                mapping.setId(existing.getId());
+                PlcAddressMapping updated = plcAddressMappingService.updateMapping(mapping);
+                log.info("根据项目ID更新PLC地址映射配置成功，项目标识: {}", projectId);
+                return Result.success(updated);
+            } else {
+                // 创建新配置
+                PlcAddressMapping created = plcAddressMappingService.saveMapping(mapping);
+                log.info("根据项目ID创建PLC地址映射配置成功，项目标识: {}", projectId);
+                return Result.success(created);
+            }
+        } catch (Exception e) {
+            log.error("根据项目ID更新PLC地址映射配置失败，项目标识: " + projectId, e);
+            return Result.error("更新配置失败: " + e.getMessage());
         }
     }
 
