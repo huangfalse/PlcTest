@@ -3,14 +3,12 @@ package com.mes.entity;
 import com.github.xingshuangs.iot.common.enums.EDataType;
 import com.github.xingshuangs.iot.protocol.s7.serializer.S7Variable;
 import lombok.Data;
-import org.springframework.stereotype.Component;
 
 /**
  * @author huang
  * @since 2025/10/30
  */
 @Data
-@Component
 public class PlcBaseData {
     /**
      * plc

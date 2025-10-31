@@ -11,12 +11,12 @@ import java.io.Serializable;
 /**
  * PLC地址映射配置表
  * 
- * @author zhoush
+ * @author huang
  * @date 2025/10/30
  */
 @Data
 @TableName("plc_address_mapping")
-public class PlcAddressMapping implements Serializable {
+public class PlcAddress implements Serializable {
     
     private static final long serialVersionUID = 1L;
     

@@ -5,7 +5,7 @@ import lombok.Data;
 /**
  * 统一API响应结果
  * 
- * @author zhoush
+ * @author huang
  * @date 2025/10/29
  */
 @Data
@@ -104,6 +104,7 @@ public class Result<T> {
      * 判断是否成功
      */
     public boolean isSuccess() {
-        return this.code != null && this.code == 200;
+        // 使用Integer.valueOf避免自动拆箱问题
+        return this.code != null && Integer.valueOf(200).equals(this.code);
     }
 }

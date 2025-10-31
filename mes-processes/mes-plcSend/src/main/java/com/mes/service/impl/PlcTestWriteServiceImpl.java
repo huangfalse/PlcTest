@@ -1,10 +1,12 @@
-package com.mes.service;
+package com.mes.service.impl;
 
 import com.github.xingshuangs.iot.protocol.s7.enums.EPlcType;
 import com.github.xingshuangs.iot.protocol.s7.service.S7PLC;
 import com.mes.entity.PlcBaseData;
 import com.mes.entity.PlcAddress;
 import com.mes.s7.enhanced.EnhancedS7Serializer;
+import com.mes.service.PlcAddressService;
+import com.mes.service.IPlcTestWriteService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -13,15 +15,15 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 /**
- * PLC测试写入服务
+ * PLC测试写入服务实现类
  * 模拟PLC行为，向PLC写入测试数据，用于测试MES程序
  * 
  * @author huang
- * @date 2025/10/29
+ * @date 2025/10/30
  */
 @Slf4j
 @Service
-public class PlcTestWriteService {
+public class PlcTestWriteServiceImpl implements PlcTestWriteService {
 
     @Resource
     private PlcAddressService plcAddressService;
@@ -38,6 +40,7 @@ public class PlcTestWriteService {
     /**
      * 模拟PLC发送请求字（触发MES任务下发）
      */
+    @Override
     public boolean simulatePlcRequest() {
         return simulatePlcRequest(currentProjectId);
     }
@@ -45,6 +48,7 @@ public class PlcTestWriteService {
     /**
      * 模拟PLC发送请求字（触发MES任务下发）- 支持指定项目
      */
+    @Override
     public boolean simulatePlcRequest(String projectId) {
         try {
             // 获取项目配置（数据库实体）
@@ -79,6 +83,7 @@ public class PlcTestWriteService {
     /**
      * 模拟PLC任务完成汇报
      */
+    @Override
     public boolean simulatePlcReport() {
         return simulatePlcReport(currentProjectId);
     }
@@ -86,6 +91,7 @@ public class PlcTestWriteService {
     /**
      * 模拟PLC任务完成汇报 - 支持指定项目
      */
+    @Override
     public boolean simulatePlcReport(String projectId) {
         try {
             // 获取项目配置（数据库实体）
@@ -118,6 +124,7 @@ public class PlcTestWriteService {
     /**
      * 模拟PLC发送联机状态
      */
+    @Override
     public boolean simulateOnlineStatus(int onlineState) {
         return simulateOnlineStatus(onlineState, currentProjectId);
     }
@@ -125,6 +132,7 @@ public class PlcTestWriteService {
     /**
      * 模拟PLC发送联机状态 - 支持指定项目
      */
+    @Override
     public boolean simulateOnlineStatus(int onlineState, String projectId) {
         try {
             // 获取项目配置（数据库实体）
@@ -152,6 +160,7 @@ public class PlcTestWriteService {
     /**
      * 重置PLC所有状态
      */
+    @Override
     public boolean resetPlc() {
         return resetPlc(currentProjectId);
     }
@@ -159,6 +168,7 @@ public class PlcTestWriteService {
     /**
      * 重置PLC所有状态 - 支持指定项目
      */
+    @Override
     public boolean resetPlc(String projectId) {
         try {
             // 获取项目配置（数据库实体）
@@ -194,6 +204,7 @@ public class PlcTestWriteService {
     /**
      * 读取PLC当前状态
      */
+    @Override
     public PlcBaseData readPlcStatus() {
         return readPlcStatus(currentProjectId);
     }
@@ -201,6 +212,7 @@ public class PlcTestWriteService {
     /**
      * 读取PLC当前状态 - 支持指定项目
      */
+    @Override
     public PlcBaseData readPlcStatus(String projectId) {
         try {
             // 获取项目配置（数据库实体）
@@ -219,6 +231,7 @@ public class PlcTestWriteService {
     /**
      * 设置当前项目标识
      */
+    @Override
     public void setCurrentProjectId(String projectId) {
         this.currentProjectId = projectId;
     }
@@ -226,6 +239,7 @@ public class PlcTestWriteService {
     /**
      * 获取当前项目标识
      */
+    @Override
     public String getCurrentProjectId() {
         return this.currentProjectId;
     }
@@ -264,6 +278,7 @@ public class PlcTestWriteService {
      * 
      * @param projectId 项目标识
      */
+    @Override
     public void clearSerializerCache(String projectId) {
         serializerCache.remove(projectId);
         log.info("已清除项目 {} 的S7Serializer缓存", projectId);
@@ -272,6 +287,7 @@ public class PlcTestWriteService {
     /**
      * 清除所有S7Serializer缓存
      */
+    @Override
     public void clearAllSerializerCache() {
         serializerCache.clear();
         log.info("已清除所有S7Serializer缓存");

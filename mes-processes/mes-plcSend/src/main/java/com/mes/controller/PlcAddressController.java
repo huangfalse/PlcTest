@@ -1,9 +1,8 @@
 package com.mes.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.mes.config.PlcAddressMappingConfig;
-import com.mes.entity.PlcAddressMapping;
-import com.mes.service.PlcAddressMappingService;
+import com.mes.entity.PlcAddress;
+import com.mes.service.PlcAddressService;
 import com.mes.vo.Result;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiOperation;
@@ -20,26 +19,26 @@ import java.util.Map;
  * PLC地址映射配置控制器
  * 提供PLC地址映射配置的增删改查接口
  * 
- * @author zhoush
+ * @author huang
  * @date 2025/10/29
  */
 @Slf4j
 @RestController
 @RequestMapping("address-mapping")
 @Api(tags = "PLC地址映射配置管理")
-public class PlcAddressMappingController {
+public class PlcAddressController {
 
     @Resource
-    private PlcAddressMappingService plcAddressMappingService;
+    private PlcAddressService plcAddressService;
 
     /**
      * 获取所有PLC地址映射配置
      */
     @GetMapping("/list")
     @ApiOperation("获取所有PLC地址映射配置")
-    public Result<List<PlcAddressMapping>> getAllMappings() {
+    public Result<List<PlcAddress>> getAllMappings() {
         try {
-            List<PlcAddressMapping> mappings = plcAddressMappingService.getAllMappings();
+            List<PlcAddress> mappings = plcAddressService.getAllMappings();
             return Result.success(mappings);
         } catch (Exception e) {
             log.error("获取PLC地址映射配置列表失败", e);
@@ -52,13 +51,13 @@ public class PlcAddressMappingController {
      */
     @GetMapping("/page")
     @ApiOperation("分页获取PLC地址映射配置")
-    public Result<IPage<PlcAddressMapping>> getMappingsByPage(
+    public Result<IPage<PlcAddress>> getMappingsByPage(
             @ApiParam("页码，从1开始") @RequestParam(defaultValue = "1") int page,
             @ApiParam("每页条数") @RequestParam(defaultValue = "10") int size,
             @ApiParam("项目标识，支持模糊查询") @RequestParam(required = false) String projectId,
             @ApiParam("PLC IP地址，支持模糊查询") @RequestParam(required = false) String plcIp) {
         try {
-            IPage<PlcAddressMapping> pageResult = plcAddressMappingService.getMappingsByPage(page, size, projectId, plcIp);
+            IPage<PlcAddress> pageResult = plcAddressService.getMappingsByPage(page, size, projectId, plcIp);
             return Result.success(pageResult);
         } catch (Exception e) {
             log.error("分页获取PLC地址映射配置失败", e);
@@ -69,12 +68,12 @@ public class PlcAddressMappingController {
     /**
      * 根据ID获取PLC地址映射配置
      */
-    @GetMapping("/{id}")
+    @GetMapping("/detail")
     @ApiOperation("根据ID获取PLC地址映射配置")
-    public Result<PlcAddressMapping> getMappingById(
-            @ApiParam("配置ID") @PathVariable Long id) {
+    public Result<PlcAddress> getMappingById(
+            @ApiParam("配置ID") @RequestParam Long id) {
         try {
-            PlcAddressMapping mapping = plcAddressMappingService.getMappingById(id);
+            PlcAddress mapping = plcAddressService.getMappingById(id);
             if (mapping != null) {
                 return Result.success(mapping);
             } else {
@@ -89,12 +88,12 @@ public class PlcAddressMappingController {
     /**
      * 根据项目标识获取PLC地址映射配置
      */
-    @GetMapping("/project/{projectId}")
+    @GetMapping("/project")
     @ApiOperation("根据项目标识获取PLC地址映射配置")
-    public Result<PlcAddressMapping> getMappingByProjectId(
-            @ApiParam("项目标识") @PathVariable String projectId) {
+    public Result<PlcAddress> getMappingByProjectId(
+            @ApiParam("项目标识") @RequestParam String projectId) {
         try {
-            PlcAddressMapping mapping = plcAddressMappingService.getMappingByProjectId(projectId);
+            PlcAddress mapping = plcAddressService.getMappingByProjectId(projectId);
             if (mapping != null) {
                 return Result.success(mapping);
             } else {
@@ -114,22 +113,28 @@ public class PlcAddressMappingController {
     @ApiOperation("根据项目ID获取项目配置（包含地址映射）")
     public Result<Map<String, Object>> getProjectConfig(String projectId) {
         try {
-            // 获取基础配置
-            PlcAddressMapping mapping = plcAddressMappingService.getMappingByProjectId(projectId);
+            PlcAddress mapping = plcAddressService.getProjectConfig(projectId);
             
-            // 获取完整项目配置（包含地址映射）
-            PlcAddressMappingConfig.ProjectPlcConfig projectConfig = plcAddressMappingService.getProjectConfigWithMapping(projectId);
-            
-            // 合并基础配置信息
+            // 组装输出，仅基于数据库实体
             Map<String, Object> result = new HashMap<>();
             result.put("projectId", projectId);
-            result.put("dbArea", projectConfig.getDbArea());
-            result.put("beginIndex", projectConfig.getBeginIndex());
-            result.put("plcIp", projectConfig.getPlcIp());
-            result.put("plcType", projectConfig.getPlcType());
-            result.put("addressMapping", projectConfig.getAddressMapping());
+            result.put("dbArea", mapping != null ? mapping.getDbArea() : "DB1");
+            result.put("beginIndex", mapping != null ? mapping.getBeginIndex() : 0);
+            result.put("plcIp", mapping != null ? mapping.getPlcIp() : null);
+            result.put("plcType", mapping != null ? mapping.getPlcType() : null);
             
-            // 如果数据库中有配置，添加数据库中的额外信息
+            // 解析addressMapping JSON为Map
+            Map<String, Integer> addressMap = new HashMap<>();
+            if (mapping != null && mapping.getAddressMapping() != null && !mapping.getAddressMapping().trim().isEmpty()) {
+                try {
+                    addressMap = new com.fasterxml.jackson.databind.ObjectMapper()
+                            .readValue(mapping.getAddressMapping(), new com.fasterxml.jackson.core.type.TypeReference<Map<String, Integer>>() {});
+                } catch (Exception parseEx) {
+                    log.warn("解析地址映射JSON失败: {}", mapping.getAddressMapping());
+                }
+            }
+            result.put("addressMapping", addressMap);
+            
             if (mapping != null) {
                 result.put("id", mapping.getId());
                 result.put("projectName", mapping.getProjectName());
@@ -148,8 +153,8 @@ public class PlcAddressMappingController {
      */
     @PostMapping
     @ApiOperation("创建新的PLC地址映射配置")
-    public Result<PlcAddressMapping> createMapping(
-            @ApiParam("PLC地址映射配置") @RequestBody PlcAddressMapping mapping) {
+    public Result<PlcAddress> createMapping(
+            @ApiParam("PLC地址映射配置") @RequestBody PlcAddress mapping) {
         try {
             // 参数验证
             if (mapping.getProjectId() == null || mapping.getProjectId().trim().isEmpty()) {
@@ -163,7 +168,7 @@ public class PlcAddressMappingController {
                 mapping.setBeginIndex(0); // 如果为负数，设置为默认起始索引0
             }
 
-            PlcAddressMapping created = plcAddressMappingService.saveMapping(mapping);
+            PlcAddress created = plcAddressService.saveMapping(mapping);
             log.info("创建PLC地址映射配置成功，ID: {}, 项目标识: {}", created.getId(), created.getProjectId());
             return Result.success(created);
         } catch (Exception e) {
@@ -175,11 +180,11 @@ public class PlcAddressMappingController {
     /**
      * 更新PLC地址映射配置
      */
-    @PutMapping("/{id}")
+    @PutMapping("/update")
     @ApiOperation("更新PLC地址映射配置")
-    public Result<PlcAddressMapping> updateMapping(
-            @ApiParam("配置ID") @PathVariable Long id,
-            @ApiParam("更新的PLC地址映射配置") @RequestBody PlcAddressMapping mapping) {
+    public Result<PlcAddress> updateMapping(
+            @ApiParam("配置ID") @RequestParam Long id,
+            @ApiParam("更新的PLC地址映射配置") @RequestBody PlcAddress mapping) {
         try {
             // 参数验证
             if (mapping.getProjectId() == null || mapping.getProjectId().trim().isEmpty()) {
@@ -190,7 +195,7 @@ public class PlcAddressMappingController {
             }
 
             mapping.setId(id);
-            PlcAddressMapping updated = plcAddressMappingService.updateMapping(mapping);
+            PlcAddress updated = plcAddressService.updateMapping(mapping);
             if (updated != null) {
                 log.info("更新PLC地址映射配置成功，ID: {}, 项目标识: {}", updated.getId(), updated.getProjectId());
                 return Result.success(updated);
@@ -207,11 +212,11 @@ public class PlcAddressMappingController {
      * 根据项目ID更新配置
      * 对应前端：updateConfig
      */
-    @PutMapping("/project/{projectId}")
+    @PutMapping("/project/update")
     @ApiOperation("根据项目ID更新配置")
-    public Result<PlcAddressMapping> updateMappingByProjectId(
-            @ApiParam("项目标识") @PathVariable String projectId,
-            @ApiParam("更新的PLC地址映射配置") @RequestBody PlcAddressMapping mapping) {
+    public Result<PlcAddress> updateMappingByProjectId(
+            @ApiParam("项目标识") @RequestParam String projectId,
+            @ApiParam("更新的PLC地址映射配置") @RequestBody PlcAddress mapping) {
         try {
             // 参数验证
             if (mapping.getDbArea() == null || mapping.getDbArea().trim().isEmpty()) {
@@ -222,16 +227,16 @@ public class PlcAddressMappingController {
             mapping.setProjectId(projectId);
             
             // 查找现有配置
-            PlcAddressMapping existing = plcAddressMappingService.getMappingByProjectId(projectId);
+            PlcAddress existing = plcAddressService.getMappingByProjectId(projectId);
             if (existing != null) {
                 // 更新现有配置
                 mapping.setId(existing.getId());
-                PlcAddressMapping updated = plcAddressMappingService.updateMapping(mapping);
+                PlcAddress updated = plcAddressService.updateMapping(mapping);
                 log.info("根据项目ID更新PLC地址映射配置成功，项目标识: {}", projectId);
                 return Result.success(updated);
             } else {
                 // 创建新配置
-                PlcAddressMapping created = plcAddressMappingService.saveMapping(mapping);
+                PlcAddress created = plcAddressService.saveMapping(mapping);
                 log.info("根据项目ID创建PLC地址映射配置成功，项目标识: {}", projectId);
                 return Result.success(created);
             }
@@ -244,12 +249,12 @@ public class PlcAddressMappingController {
     /**
      * 删除PLC地址映射配置
      */
-    @DeleteMapping("/{id}")
+    @DeleteMapping("/delete")
     @ApiOperation("删除PLC地址映射配置")
     public Result<Void> deleteMapping(
-            @ApiParam("配置ID") @PathVariable Long id) {
+            @ApiParam("配置ID") @RequestParam Long id) {
         try {
-            boolean deleted = plcAddressMappingService.deleteMapping(id);
+            boolean deleted = plcAddressService.deleteMapping(id);
             if (deleted) {
                 log.info("删除PLC地址映射配置成功，ID: {}", id);
                 return Result.success();
@@ -274,7 +279,7 @@ public class PlcAddressMappingController {
                 return Result.error("ID列表不能为空");
             }
             
-            int deletedCount = plcAddressMappingService.deleteMappings(ids);
+            int deletedCount = plcAddressService.deleteMappings(ids);
             log.info("批量删除PLC地址映射配置成功，删除数量: {}, ID列表: {}", deletedCount, ids);
             return Result.success();
         } catch (Exception e) {
@@ -286,17 +291,17 @@ public class PlcAddressMappingController {
     /**
      * 测试PLC连接
      */
-    @PostMapping("/{id}/test-connection")
+    @PostMapping("/test-connection")
     @ApiOperation("测试PLC连接")
     public Result<String> testConnection(
-            @ApiParam("配置ID") @PathVariable Long id) {
+            @ApiParam("配置ID") @RequestParam Long id) {
         try {
-            PlcAddressMapping mapping = plcAddressMappingService.getMappingById(id);
+            PlcAddress mapping = plcAddressService.getMappingById(id);
             if (mapping == null) {
                 return Result.error("未找到ID为 " + id + " 的PLC地址映射配置");
             }
 
-            boolean isConnected = plcAddressMappingService.testConnection(mapping);
+            boolean isConnected = plcAddressService.testConnection(mapping);
             if (isConnected) {
                 String message = String.format("PLC连接测试成功 - 项目: %s, IP: %s, DB块: %s", 
                         mapping.getProjectId(), mapping.getPlcIp(), mapping.getDbArea());
@@ -321,7 +326,7 @@ public class PlcAddressMappingController {
     @ApiOperation("重新加载配置文件中的地址映射")
     public Result<String> reloadConfig() {
         try {
-            plcAddressMappingService.reloadConfigMappings();
+            plcAddressService.reloadConfigMappings();
             String message = "配置文件中的PLC地址映射已重新加载";
             log.info(message);
             return Result.success(message);

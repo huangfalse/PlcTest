@@ -30,38 +30,6 @@ spring:
     port: 6379
     password: 123456
 
-raw:
-  mode: shuttle
-
-s7:
-  shuttle:
-    dbArea: DB38.
-    beginIndex: 0
-  address:
-    raw:
-      onlineState: 2
-      plcRequest: 0
-      plcReport: 10
-      finishA: 60
-      finishB: 62
-      state: 18
-      onePosition: 6
-      twoPosition: 14
-      mesSend: 20
-      mesConfirm: 40
-      start: 24
-      target: 26
-      mesGlassCount: 30
-      rawMargin1: 32
-      mesWidth1: 34
-      mesHeight1: 36
-      rawThickness1: 38
-      rawMargin2: 44
-      mesWidth2: 46
-      mesHeight2: 48
-      rawThickness2: 50
-      alarmInfo: 52
-
 # PLC自动测试配置
 plc:
   auto:
@@ -71,10 +39,8 @@ plc:
   # PLC地址映射配置
   address:
     mapping:
-      defaultDbArea: "DB1."
-      defaultBeginIndex: 0
       projects:
-        shuttle:
+        vertical:
           dbArea: "DB38."
           beginIndex: 0
           plcIp: "192.168.10.21"

@@ -1,5 +1,7 @@
-package com.mes.service;
+package com.mes.service.impl;
 
+import com.mes.service.IPlcAutoTestService;
+import com.mes.service.IPlcTestWriteService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -8,7 +10,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 
 /**
- * PLC自动测试服务
+ * PLC自动测试服务实现类
  * 定时模拟PLC行为，向PLC写入测试数据，用于自动测试MES程序
  *
  * @author huang
@@ -16,10 +18,10 @@ import javax.annotation.Resource;
  */
 @Slf4j
 @Service
-public class PlcAutoTestService {
+public class PlcAutoTestServiceImpl implements PlcAutoTestService {
 
     @Resource
-    private PlcTestWriteService plcTestWriteService;
+    private IPlcTestWriteService plcTestWriteService;
 
     // 自动测试开关
     @Value("${plc.auto.test.enabled:false}")
@@ -54,6 +56,7 @@ public class PlcAutoTestService {
     /**
      * 启用自动测试
      */
+    @Override
     public void enableAutoTest() {
         this.autoTestEnabled = true;
         log.info("PLC自动测试已启用");
@@ -62,6 +65,7 @@ public class PlcAutoTestService {
     /**
      * 禁用自动测试
      */
+    @Override
     public void disableAutoTest() {
         this.autoTestEnabled = false;
         log.info("PLC自动测试已禁用");
@@ -70,6 +74,7 @@ public class PlcAutoTestService {
     /**
      * 获取自动测试状态
      */
+    @Override
     public boolean isAutoTestEnabled() {
         return this.autoTestEnabled;
     }

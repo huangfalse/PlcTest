@@ -20,16 +20,16 @@
 - 支持从配置文件加载默认配置
 
 ### 2. PlcAddressMapping
-- 位置：`com.mes.entity.PlcAddressMapping`
+- 位置：`com.mes.entity.PlcAddress`
 - 功能：实体类，对应数据库表结构
 - 存储项目PLC地址映射配置
 
 ### 3. PlcAddressMappingMapper
-- 位置：`com.mes.mapper.PlcAddressMappingMapper`
+- 位置：`com.mes.mapper.PlcAddressMapper`
 - 功能：MyBatis Mapper接口，提供数据库操作
 
 ### 4. PlcAddressMappingService
-- 位置：`com.mes.service.PlcAddressMappingService`
+- 位置：`com.mes.service.PlcAddressService`
 - 功能：服务类，提供PLC地址映射配置的增删改查功能
 - 支持从数据库和配置文件加载配置
 
@@ -39,7 +39,7 @@
 - 缓存不同项目的S7Serializer实例
 
 ### 6. PlcAddressMappingController
-- 位置：`com.mes.controller.PlcAddressMappingController`
+- 位置：`com.mes.controller.PlcAddressController`
 - 功能：控制器，提供REST API接口
 
 ## API接口

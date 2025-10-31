@@ -22,5 +22,5 @@ CREATE TABLE IF NOT EXISTS `plc_address_mapping` (
 
 -- 插入默认配置
 INSERT INTO `plc_address_mapping` (`project_id`, `project_name`, `db_area`, `begin_index`, `plc_ip`, `plc_type`, `description`) 
-VALUES ('shuttle', '穿梭车项目', 'DB38', 0, '192.168.10.21', 'S1200', '默认穿梭车项目配置')
+VALUES ('vertical', '垂直车项目', 'DB38', 0, '192.168.10.21', 'S1200', '默认垂直车项目配置')
 ON DUPLICATE KEY UPDATE `update_time` = CURRENT_TIMESTAMP;
