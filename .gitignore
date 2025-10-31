@@ -1,1 +1,12 @@
-target/
+# 忽略所有模块的target目录（递归匹配所有子目录）
+**/target/
+# 忽略target目录下的所有文件（防止遗漏）
+**/target/*
+# 若有Gradle模块，补充忽略build目录
+**/build/
+**/build/*
+# 忽略IDE生成的临时文件（可选）
+**/.idea/
+**/*.iml
+**/.classpath
+**/.project
